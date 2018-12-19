@@ -14,9 +14,7 @@ int main(int argc, char const *argv[])
 {
 	Dataset myDataset(DATABASE_NAME);
 
-
 	std::cout << "Hola Mundo!\n";
-
 
 	return 0;
 }

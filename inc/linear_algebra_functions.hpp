@@ -217,6 +217,8 @@ union Mat44 {
     __m128 row[4];
 };
 
+typedef Mat44 Pose; // Para mejorar el readibility
+
 void printMat44(const Mat44 &mat, const char* name){
     std:: cout << name << ":\n";
     for(int i = 0; i < 4; ++i){
