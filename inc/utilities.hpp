@@ -115,5 +115,27 @@ void writeEigenVec2File(const Eigen::VectorXd& Vec, const char* file){
     fout.close();
 }
 
+// Funcion split para leer los datos
+
+std::vector<std::string> split(const std::string& s, char separator)
+{
+   std::vector<std::string> output;
+
+    std::string::size_type prev_pos = 0, pos = 0;
+
+    while((pos = s.find(separator, pos)) != std::string::npos)
+    {
+        std::string substring( s.substr(prev_pos, pos-prev_pos) );
+
+        output.push_back(substring);
+
+        prev_pos = ++pos;
+    }
+
+    output.push_back(s.substr(prev_pos, pos-prev_pos)); // Last word
+
+    return output;
+}
+
 
 #endif //UTILITIES_HPP

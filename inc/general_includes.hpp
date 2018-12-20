@@ -7,6 +7,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <tuple>
 
 // Import Intrinsic Directives
 #include <immintrin.h>
