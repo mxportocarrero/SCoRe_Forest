@@ -76,8 +76,7 @@ private:
     int num_frames_ = 0;
 
 public:
-    Dataset(std::string dataset_path):
-    	dataset_path_{dataset_path};
+    Dataset(std::string dataset_path);
 
     // Estas funciones se encargan de devolver los cv::Mat y Poses correspondientes
     cv::Mat getRgbImage(int frame);
@@ -90,126 +89,5 @@ public:
     void addFrame(cv::Mat rgb_frame, cv::Mat depth_frame, Pose pose);
 
 }; // Fin de Clase de Dataset
-
-// Implementacion de Funciones
-
-/**
-Class Constructor
-@param dataset_path Un string que indica la ubicacion de la secuencia a utilizarse
-*/
-Dataset::Dataset(std::string dataset_path):
-    dataset_path_(dataset_path){
-
-    std::ifstream myRgbFile;
-    std::ifstream myDepthFile;
-    std::ifstream myGroundtruthFile;
-
-    myRgbFile.open(dataset_path_ + "/rgb_t.txt");
-    myDepthFile.open(dataset_path_ + "/depth_t.txt");
-    myGroundtruthFile.open(dataset_path_ + "/groundtruth.txt");
-
-    std::string RGBline;
-    std::string DEPTHline;
-    std::string Groundtruthline;
-
-    // Validamos que hayamos abierto los archivos
-    if (myRgbFile.is_open() && myDepthFile.is_open() && myGroundtruthFile.is_open())
-    {
-    	std::vector<double> tempStamps,tempStamps_gt; // Vectores para almacenar los timestamps
-    	// Lectura de los datos RGBD
-    	// *************************
-    	while(std::getline(myRgbFile,RGBline) && std::getline(myDepthFile,DEPTHline)){
-    		if(RGBline[0] != '#'){ // Omitimos los comentarios, y solo usamos uno porq ya estan preprocesados
-	    		timestamp_rgbd_.push_back( split(RGBline,' ')[0] );
-	    		rgb_filenames_.push_back( split(RGBline,' ')[1] );
-	    		depth_filenames_.push_back( split(DEPTHline,' ')[1] );
-
-	    		tempStamps.push_back( std::stod(split(RGBline,' ')[0]) );
-    		}
-    	} // Fin de Bucle While
-
-    	// Lectura del Groundtruth
-    	// ***********************
-    	std::vector<std::string> temp;
-    	while(std::getline(myGroundtruthFile,Groundtruthline)){
-    		if(Groundtruthline[0] != '#'){
-    			temp = split(Groundtruthline,' ');
-    			timestamp_groundtruth_.push_back( temp[0] );
-    			pose_gt_.push_back(Quaternion_2_Mat44(std::stof(temp[1]),std::stof(temp[2]),std::stof(temp[3]),std::stof(temp[4]),std::stof(temp[5]),std::stof(temp[6]),std::stof(temp[7])));
-
-    			tempStamps_gt.push_back( std::stod( temp[0] ) );
-    		}
-    	}
-
-    	// Time Alignment
-    	// **************
-    	
-    	for
-
-    	// Declaramos un vector de ternas para almacenar todas las combinaciones de timestamps
-    	// que tengan diferencias menores a un max_difference en tiempo
-    	double max_difference = 0.02 // en segundos es 2 decimas de segundo
-    	std::vector< std::tuple<double,double,double> > ternas;
-    	for (int i = 0; i < timestamp_rgbd_.size(); ++i){
-    		for (int j = 0; j < timestamp_groundtruth_.size(); ++j){
-    			double a = timestamp_rgbd_[i], b = timestamp_groundtruth_[j];
-    			if(abs(a - b) < max_difference){
-    				std::tuple<double,double,double> t(a-b,a,b);
-    				ternas.push_back(tuple);
-    			}
-    		}
-    	}
-
-    	// Ordenamos las tuplas de acuerdo al primer valor
-    	std::sort(ternas.begin(),ternas.end());
-
-    	for (int i = 0; i < ternas.size(); ++i){
-    		/* code */
-    	}
-
-
-
-
-    } else {
-    	std::cout << "Could not Open a File\n";
-    }
-} // Fin del constructor
-
-cv::Mat Dataset::getRgbImage(int frame){
-	if (rgb_images_.count(frame)) {
-    	return rgb_images_.at(frame);
-    }
-    else {
-    	cv::Mat img = cv::imread(data_path_ + rgb_names_.at(frame));
-        rgb_images_.insert(std::pair<uint32_t, cv::Mat>(frame, img));
-        return img;
-    }
-}
-
-cv::Mat Dataset::getDepthImage(int frame){
-	if (depth_images_.count(frame)) {
-    	return depth_images_.at(frame);
-    }
-    else {
-    	cv::Mat img = cv::imread(data_path_ + depth_names_.at(frame), CV_LOAD_IMAGE_ANYDEPTH);
-    	depth_images_.insert(std::pair<uint32_t, cv::Mat>(frame, img));
-        return img;
-    }
-}
-
-Pose Dataset::getPose(int frame){
-	return poses_.at(frame);
-}
-
-int Dataset::getNumFrames(){
-    return num_frames_;
-}
-
-void Dataset::addFrame(cv::Mat rgb_frame, cv::Mat depth_frame, Pose pose){
-	rgb_images_.insert(std::pair<uint32_t, cv::Mat>(num_frames_, rgb_frame));
-    depth_images_.insert(std::pair<uint32_t, cv::Mat>(num_frames_, depth_frame));
-    poses_.push_back(pose);
-    num_frames_++;
-}
 
 #endif // DATASET_HPP
