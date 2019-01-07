@@ -32,9 +32,7 @@ Comando para ejecucion:
 
 */
 
-#include "inc/dataset.hpp"
-
-#include "inc/node.hpp"
+#include "inc/tree.hpp"
 
 #define DATABASE_NAME "data/rgbd_dataset_freiburg11_room"
 
@@ -55,8 +53,6 @@ int main(int argc, char const *argv[])
 	}
 	*/
 
-	std::cout << "Hola Mundo!2\n";
-
 	/** // Test para el generador de numeros random
 	Random myRandGenerator;
 	for (int i = 0; i < 5; ++i)
@@ -73,9 +69,22 @@ int main(int argc, char const *argv[])
 	std::cout << feature.GetThreshold() << std::endl;
 	*/
 
-	// Testeando la clase Node
-	
+	// Testeando la Clase Tree
 
+	// SETTINGS
+	// --------
+	// los argumentos representan los siquientes parámetros
+	// width / heigth / depth_factor / fx / fy / cx / cy
+
+	// También hay otros parametros que estan definidos aqui
+	// num_trees = 5 / max_tree_depth = 16 / num_frames_per_tree = 500
+	// num_px_per_frame = 5000
+	Settings *settings = new Settings(640, 480, 5000, 525.0f, 525.0f, 319.5f, 239.5f);
+
+	// DATA
+	Dataset *myDataset = new Dataset(DATABASE_NAME);
+
+	Tree<ushort, cv::Vec3b> * tree = new Tree<ushort, cv::Vec3b>();
 
 	return 0;
 }

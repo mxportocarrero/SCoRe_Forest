@@ -8,6 +8,7 @@
  */
 
 #include <stdio.h>
+#include <vector>
 #include <math.h>
 #include <bitset>
 #include "general_includes.hpp"
@@ -45,11 +46,11 @@ public:
     MeanShift() { set_kernel(NULL); }
     MeanShift(double (*_kernel_func)(double,double)) { set_kernel(kernel_func); }
 
-    vector<Eigen::Vector3d> MeanShift::cluster(vector<Eigen::Vector3d> points, double kernel_bandwidth)
+    std::vector<Eigen::Vector3d> cluster(std::vector<Eigen::Vector3d> points, double kernel_bandwidth)
     {
-		vector<bool> stop_moving(points.size(), false);
+		std::vector<bool> stop_moving(points.size(), false);
 		stop_moving.reserve(points.size());
-		vector<Eigen::Vector3d> shifted_points = points;
+		std::vector<Eigen::Vector3d> shifted_points = points;
 		double max_shift_distance;
 
 		do {
@@ -86,7 +87,7 @@ private:
 	//   }
 	}
 
-    Eigen::Vector3d MeanShift::shift_point(const Eigen::Vector3d &point, const vector<Eigen::Vector3d> &points, double kernel_bandwidth)
+    Eigen::Vector3d shift_point(const Eigen::Vector3d &point, const std::vector< Eigen::Vector3d > &points, double kernel_bandwidth)
     {
 		Eigen::Vector3d shifted_point = point;
 		for(int dim = 0; dim<shifted_point.size(); dim++){

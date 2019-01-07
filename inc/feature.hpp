@@ -20,6 +20,11 @@ protected:
 	cv::Point2i offset_1_;
 	cv::Point2i offset_2_;
 public:
+	Feature()
+	{
+		offset_1_ = cv::Point2i(0,0);
+		offset_2_ = cv::Point2i(0,0);
+	}
 	Feature(cv::Point2i offset_1, cv::Point2i offset_2) : offset_1_(offset_1), offset_2_(offset_2){};
 	virtual float GetResponse(cv::Mat depth_image, cv::Mat rgb_image, cv::Point2i pos, Settings &settings, bool &valid) = 0;	
 };

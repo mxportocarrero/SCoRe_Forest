@@ -1,6 +1,9 @@
 
 #include "node.hpp"
+#include "dataset.hpp"
 #include "mean_shift.hpp"
+
+#include <unordered_map>
 
 // CLASE TREE
 // ----------
@@ -76,7 +79,7 @@ class Tree
 {
 private:
 	Node<D, RGB> *root_;
-	Data *data_;
+	Dataset *data_;
 	Random *random_;
 	Settings *settings_;
 	const char* binaryFileHeader_ = "ISUE.RelocForests.Tree";
@@ -85,7 +88,7 @@ public:
 	Tree()
 	{
 		root_ = new Node<D, RGB>();
-		root_->depth = 0;
+		root_->depth_ = 0;
 	};
 
 	void WriteTree(std::ostream& o, Node<D, RGB> *node) const
@@ -280,7 +283,7 @@ public:
 
 			for (uint32_t j = 0; j < S.size(); ++j) {
 				LabeledPixel p = S.at(j);
-				DECISION val = eval_learner(candidate_params.at(i), data_->GetDepthImage(p.frame_), data_->GetRGBImage(p.frame_), p.pos_);
+				DECISION val = eval_learner(candidate_params.at(i), data_->getDepthImage(p.frame_), data_->getRgbImage(p.frame_), p.pos_);
 
 				switch (val) {
 				case LEFT:
@@ -338,7 +341,7 @@ public:
 
 	} // Fin de la funcion train_recurse
 
-	void Train(Data *data, std::vector<LabeledPixel> labeled_data, Random *random, Settings *settings) 
+	void Train(Dataset *data, std::vector<LabeledPixel> labeled_data, Random *random, Settings *settings) 
 	{
 		data_ = data;
 		random_ = random;
