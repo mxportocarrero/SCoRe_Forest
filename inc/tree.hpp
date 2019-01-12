@@ -7,6 +7,10 @@
 
 // CLASE TREE
 // ----------
+// 		->Dataset
+// 			->general_includes
+// 			->linear_algebra_functions
+// 			->utilities
 // 		->Mean Shift
 // 		->Nodo
 //	 		->Feature // Solo es necesario agregar esta libreria para tener las otras
@@ -269,7 +273,8 @@ public:
 		} // fin de if
 
 		uint32_t num_candidates = 5, feature = 0;
-		double minimum_objective = DBL_MAX;
+		//double minimum_objective = DBL_MAX;
+		double maximum_objective = DBL_MIN;
 
 		std::vector<DepthAdaptiveRGB<D, RGB> > candidate_params;
 		std::vector<LabeledPixel> left_final, right_final;
@@ -302,13 +307,13 @@ public:
 			// todo: ensure objective function is correct
 			double objective = objective_function(S, left_data, right_data);
 
-			if (objective < minimum_objective) {
+			if (objective > maximum_objective) {
 			feature = i;
-			minimum_objective = objective;
+			maximum_objective = objective;
 			left_final = left_data;
 			right_final = right_data;
 			}
-		} // Fin de bucle FOR para los candidatos
+		} // Fin de bucle FOR para los Feature Candidatos
 
 		// split went only one way
 		if (left_final.empty()) {

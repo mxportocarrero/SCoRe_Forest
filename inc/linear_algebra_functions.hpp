@@ -49,7 +49,13 @@ union Mat44 {
 
 typedef Mat44 Pose; // Para mejorar el readibility
 
+// Funciones para recuperar los vectores de rotacion y traslacion a partir de nuestro Mat44
+// en formato Eigen
+Eigen::Matrix3d poseRotation(const Pose &pose);
+Eigen::Vector3d posePosition(const Pose &pose);
+
 void printMat44(const Mat44 &mat, const char* name);
+void printEigenVector3d(const Eigen::Vector3d &vec);
 
 // Tengamos en cuenta que una multiplicación de matrices puede llevarse a cabo de diferentes formas
 // en nuestro caso, expresamos este proceso mediante combinaciones lineales(linear combination). Ver agenda

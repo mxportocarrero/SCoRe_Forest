@@ -9,6 +9,14 @@
 #include "utilities.hpp"
 #include <map>
 
+// CLASE DATASET
+// ----------
+//      ->General Includes
+//      ->Linear Algebra Functions
+//      ->Utilities
+
+
+
 /**
 LabeledPixel
 Esta clase para representar a un solo pixel y su correspondiente valor en world coordinates
@@ -49,23 +57,24 @@ Ello se logra con el archivo 'associate_corrected.py'
 class Dataset
 {
 private:
-
-	// Nombre del 
+	// Nombre del Dataset sequence
     std::string dataset_path_;
-
-    std::vector<std::string> rgb_filenames_;
-    std::vector<std::string> depth_filenames_;
-    // En estos vectores iran los datos RGBD que usaremos
-    // Tienen la misma cantidad de elementos
-    // No necesariamente son iguales a los datos groundtruth
-    std::vector<std::string> timestamp_rgbd_;
-    std::vector<Pose> poses_;
 
     // Loaded images 
     // Vamos a cargar toda la secuencia de imagenes a la RAM
     // Para acelerar su procesamiento
-    std::map<uint32_t, cv::Mat> rgb_images_;
+    std::map<uint32_t, cv::Mat> rgb_images_; // Usamos map por un tema de implementacion para minimizar la posibilidad de error
     std::map<uint32_t, cv::Mat> depth_images_;
+    std::vector<std::string> timestamp_; // Son los timestamps finales (sincronizados)
+    std::vector<Pose> poses_;
+
+
+    // En estos vectores iran los datos RGBD que usaremos
+    // Tienen la misma cantidad de elementos
+    // No necesariamente son iguales a los datos groundtruth
+    std::vector<std::string> rgb_filenames_;
+    std::vector<std::string> depth_filenames_;
+    std::vector<std::string> timestamp_rgbd_; // Llevan los valores de RGB y no los del Depth
 
     // En estos vectores almacenaremos los timestamps y Poses del groundtruth
     // Estos vectores tienen la misma cantidad de elementos
@@ -75,19 +84,28 @@ private:
     // Hace referencia al numero de frames validos que pueden usarse para el entrenamiento
     int num_frames_ = 0;
 
+    // Vectores especiales para realizar la Lectura del 7-Scenes Dataset
+    // Como este Dataset esta partido en miles, solo guardamos los indices como
+    // indicadores de que secuencias son para Training y Testing
+    std::vector<int> train_sequences,test_sequences;
+
 public:
-    Dataset(std::string dataset_path);
+    Dataset(std::string dataset_path); // Para leer el Dataset del TUM
+    Dataset(std::string dataset_path, int dataset_type) // Para leer los datasets del 7 secenes
 
     // Estas funciones se encargan de devolver los cv::Mat y Poses correspondientes
     cv::Mat getRgbImage(int frame);
     cv::Mat getDepthImage(int frame);
+    std::string getTimestamp(int frame);
     Pose getPose(int frame);
 
     int getNumFrames();
 
     // Se encarga de  agregar datos a los diccionarios y vectores que almacenan todo
-    void addFrame(cv::Mat rgb_frame, cv::Mat depth_frame, Pose pose);
+    void addFrame(cv::Mat rgb_frame, cv::Mat depth_frame, std::string timestamp, Pose pose);
 
 }; // Fin de Clase de Dataset
+
+
 
 #endif // DATASET_HPP

@@ -26,6 +26,7 @@ template<typename D, typename RGB>
 class Node
 {
 public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	// Atributos
 	// ---------
 
@@ -42,7 +43,7 @@ public:
 
 	// El siguiente operador sirve para que los vectores tipo Eigen declarados dentro de la
 	// clase puedan estar alineados y puedan optimizarse mediante instrucciones SSE
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	
 	Node()
 	{
 		left_ = nullptr;

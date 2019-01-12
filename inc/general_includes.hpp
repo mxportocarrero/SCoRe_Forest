@@ -8,7 +8,8 @@
 #include <vector>
 #include <string>
 #include <tuple>
-
+#include <iomanip>
+#include <stdio.h>
 // Import Intrinsic Directives
 #include <immintrin.h>
 

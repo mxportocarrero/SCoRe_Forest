@@ -26,6 +26,7 @@ Dataset::Dataset(std::string dataset_path):
     {
         // Lectura de los datos RGBD
         // *************************
+        // Los datos RGBD ya se encuentran alineados
         while(std::getline(myRgbFile,RGBline) && std::getline(myDepthFile,DEPTHline)){
             if(RGBline[0] != '#'){ // Omitimos los comentarios, y solo usamos uno porq ya estan preprocesados
                 timestamp_rgbd_.push_back( split(RGBline,' ')[0] );
@@ -50,6 +51,8 @@ Dataset::Dataset(std::string dataset_path):
         // Declaramos un vector de ternas para almacenar todas las combinaciones de timestamps
         // que tengan diferencias menores a un max_difference en tiempo
         double max_difference = 0.02; // en segundos es 2 decimas de segundo
+        // estas ternas se conforman de la siguiente manera
+        // < diff_in_time , indice_rgbd , indice_gt >
         std::vector< std::tuple<double,int,int> > ternas;
         for (int i = 0; i < timestamp_rgbd_.size(); ++i){
             for (int j = 0; j < timestamp_groundtruth_.size(); ++j){
@@ -67,11 +70,13 @@ Dataset::Dataset(std::string dataset_path):
 
         // Guardaremos los indices para acceder a los vectores de poses
         std::vector< std::tuple<int,int> > matches;
-        std::vector<int> tempStamps,tempStamps_gt;
+        std::vector<int> tempStamps,tempStamps_gt; // Estos vectores es para no agregar valores repetidos
         for (int i = 0; i < ternas.size(); ++i){
             double diff = std::get<0>(ternas[i]);
             int a = std::get<1>(ternas[i]);
             int b = std::get<2>(ternas[i]);
+
+            // buscando agregar matches no repetidos
             auto it_a = std::find(tempStamps.begin(),tempStamps.end(),a);
             auto it_b = std::find(tempStamps_gt.begin(),tempStamps_gt.end(),b);
 
@@ -93,7 +98,12 @@ Dataset::Dataset(std::string dataset_path):
         for (int frame = 0; frame < matches.size(); ++frame){
             cv::Mat img_rgb = cv::imread(dataset_path_ + "/" + rgb_filenames_.at(frame));
             cv::Mat img_depth = cv::imread(dataset_path_ + "/" + depth_filenames_.at(frame), CV_LOAD_IMAGE_ANYDEPTH);
-            addFrame(img_rgb,img_depth,poses_gt_[ std::get<1>( matches[frame] ) ] );
+
+            addFrame(img_rgb,
+                     img_depth,
+                     timestamp_groundtruth_[ std::get<1>(matches[frame]) ],
+                     poses_gt_[ std::get<1>(matches[frame]) ]);
+
             if(frame % 100 == 0){
                 std::cout.precision(2);
                 std::cout << (float) frame / matches.size() * 100.0f << " percent Loaded\n";
@@ -106,7 +116,92 @@ Dataset::Dataset(std::string dataset_path):
 
     } // Fin de la lectura y del relleno de los datos
 
-} // Fin del constructor
+} // Fin del constructor // Lector del Dataset del TUM
+
+Dataset::Dataset(std::string dataset_path, int dataset_type):
+    dataset_path_(dataset_path)
+{
+    // Una entrada seria del tipo "data/7_scenes/chess"
+
+    // Tenemos que leer los archivos TrainSplit.txt y TestSplit.txt
+    std::ifstream trainFile;
+    std::ifstream testFile;
+
+    trainFile.open(dataset_path_ + "/TrainSplit.txt");
+    testFile.open(dataset_path_ + "/TestSplit.txt");
+
+    std::vector<int> train,;
+    if(trainFile.is_open() && testFile.is_open())
+    {
+        std::string temp_line; // String temporal para guardar los datos
+
+        // Leemos las secuencias de entrenamiento
+        // De estos archivos solo nos interesa capturar el indice que esta en el
+        // ultimo caracter de las lineas
+        while( std::getline(trainFile,temp_line) )
+        {
+            train_sequences.push_back( std::stoi( temp_line[ temp_line.size() - 1 ] ) );
+        }
+
+        while( std::getline(testFile,temp_line) )
+        {
+            test_sequences.push_back( std::stoi( temp_line[ temp_line.size() - 1 ] ) );
+        }
+
+        std::cout << "Training Sequences: ";
+        for (int i = 0; i < train_sequences.size(); ++i)
+            std::cout << train_sequences[i] << ","
+        std::cout << std::endl;
+
+        std::cout << "Testing Sequences: ";
+        for (int i = 0; i < test_sequences.size(); ++i)
+            std::cout << test_sequences[i] << ","
+        std::cout << std::endl;
+
+        // Cada secuencia de imagenes esta separado en sub-secuencias de 1000
+        // En cada frame se encuentran anotados < RGB, Depth, Pose >
+        // de la sgte forma:
+        //      -> frame-000000.color.png
+        //      -> frame-000000.depth.png
+        //      -> frame-000000.pose.txt
+
+        // Lo primero que haremos sera leer toda la secuencia sin importar si son
+        // frames para training o para test
+        for (int i = 0; i < train_sequences.size() + test_sequences.size(); ++i)
+        {
+            // Leemos los paquetes de los frames
+            for (int frame = 0; frame < 1000; ++i)
+            {
+                // Construyendo los strings para la lectura
+                std::string s;
+                s = std::to_string(i);
+
+                if(frame < 10)
+                {
+                    s = "00000" + s;
+                }
+                else if(frame < 100)
+                {
+                    s = "0000" + s;
+                }
+                else
+                {
+                    s = "000" + s;
+                }
+
+                s = "frame-" + s;
+
+                cv::Mat img_rgb = cv::imread(dataset_path_ + "/" + rgb_filenames_.at(frame));
+                cv::Mat img_depth = cv::imread(dataset_path_ + "/" + depth_filenames_.at(frame), CV_LOAD_IMAGE_ANYDEPTH);
+            } // Fin de FOR
+        } // Fin de FOR // Lectura de todas subsecuencias
+
+
+    }
+
+
+
+} // Fin del Constructor // Lector del 7scenes
 
 cv::Mat Dataset::getRgbImage(int frame){
     if (rgb_images_.count(frame)) {
@@ -130,6 +225,11 @@ cv::Mat Dataset::getDepthImage(int frame){
     }
 }
 
+std::string Dataset::getTimestamp(int frame)
+{
+    return timestamp_.at(frame);
+}
+
 Pose Dataset::getPose(int frame){
     return poses_.at(frame);
 }
@@ -138,9 +238,10 @@ int Dataset::getNumFrames(){
     return num_frames_;
 }
 
-void Dataset::addFrame(cv::Mat rgb_frame, cv::Mat depth_frame, Pose pose){
+void Dataset::addFrame(cv::Mat rgb_frame, cv::Mat depth_frame, std::string timestamp, Pose pose){
     rgb_images_.insert(std::pair<uint32_t, cv::Mat>(num_frames_, rgb_frame));
     depth_images_.insert(std::pair<uint32_t, cv::Mat>(num_frames_, depth_frame));
+    timestamp_.push_back(timestamp);
     poses_.push_back(pose);
     num_frames_++;
 }

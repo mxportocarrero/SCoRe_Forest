@@ -190,7 +190,28 @@ Eigen::Matrix4d QuickTransformation(const std::vector<Eigen::Vector3d> &p,const 
 //#################################################################################
 //#################################################################################
 
+Eigen::Matrix3d poseRotation(const Pose &pose){
+    Eigen::Matrix3d rotation;
+
+    rotation << pose.m[0][0], pose.m[0][1], pose.m[0][2],
+                pose.m[1][0], pose.m[1][1], pose.m[1][2],
+                pose.m[2][0], pose.m[2][1], pose.m[2][2];
+
+    return rotation;
+}
+
+Eigen::Vector3d posePosition(const Pose &pose){
+    Eigen::Vector3d pos;
+
+    pos << pose.m[0][3], pose.m[1][3], pose.m[2][3];
+    
+    return pos;
+}
+
+//#################################################################################
+
 void printMat44(const Mat44 &mat, const char* name){
+    std::cout.precision(5);
     std:: cout << name << ":\n";
     for(int i = 0; i < 4; ++i){
         for(int j = 0; j < 4; ++j){
@@ -198,6 +219,12 @@ void printMat44(const Mat44 &mat, const char* name){
         }
         std::cout << "\n";
     }
+}
+
+void printEigenVector3d(const Eigen::Vector3d &vec)
+{
+    std::cout.precision(5);
+    std::cout << "(" << vec(0) << "," << vec(1) << "," << vec(2) << ")" << std::endl;
 }
 
 // Tengamos en cuenta que una multiplicación de matrices puede llevarse a cabo de diferentes formas
