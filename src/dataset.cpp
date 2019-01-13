@@ -1,5 +1,38 @@
 #include "../inc/dataset.hpp"
 
+// Funcion especial para leer un archivo pose
+Pose read_pose(const std::string &pose_file)
+{
+    Pose pose;
+
+    std::ifstream myFile;
+
+    myFile.open(pose_file);
+
+    // La forma en que es almacenada los poses es como una matriz de 4 x 4
+
+    if (myFile.is_open())
+    {
+        std::string temp_line;
+        for (int i = 0; i < 4; ++i)
+        {
+            // Leemos la linea
+            std::getline(myFile,temp_line);
+
+            // Usamos nuestra funcion split para separarlos en cada elemento
+            std::vector<std::string> v = split(temp_line,' ');
+
+            // Asignamos los valores respectivos y formamos nuestro objeto Pose
+            pose.m[i][0] = std::stof( v[0] );
+            pose.m[i][1] = std::stof( v[1] );
+            pose.m[i][2] = std::stof( v[2] );
+            pose.m[i][3] = std::stof( v[3] );
+        }
+    }
+
+    return pose
+}
+
 // Implementacion de Funciones
 
 /**
@@ -169,11 +202,11 @@ Dataset::Dataset(std::string dataset_path, int dataset_type):
         // frames para training o para test
         for (int i = 0; i < train_sequences.size() + test_sequences.size(); ++i)
         {
+            std::string s,s_rgb,s_depth,s_pose;
             // Leemos los paquetes de los frames
             for (int frame = 0; frame < 1000; ++i)
             {
                 // Construyendo los strings para la lectura
-                std::string s;
                 s = std::to_string(i);
 
                 if(frame < 10)
@@ -189,11 +222,29 @@ Dataset::Dataset(std::string dataset_path, int dataset_type):
                     s = "000" + s;
                 }
 
-                s = "frame-" + s;
+                s_rgb = dataset_path_ + "/frame-" + s + ".color.png";
+                s_depth = dataset_path_ + "/frame-" + s + ".depth.png";
+                s_pose = dataset_path_ + "/frame-" + s + ".pose.txt";
 
-                cv::Mat img_rgb = cv::imread(dataset_path_ + "/" + rgb_filenames_.at(frame));
-                cv::Mat img_depth = cv::imread(dataset_path_ + "/" + depth_filenames_.at(frame), CV_LOAD_IMAGE_ANYDEPTH);
+                cv::Mat img_rgb = cv::imread( s_rgb );
+                cv::Mat img_depth = cv::imread( s_depth, CV_LOAD_IMAGE_ANYDEPTH );
+
+                Pose pose = read_pose(s_pose);
+
+                addFrame(img_rgb,
+                         img_depth,
+                         "00000000", // Este Dataset no tiene timestamps
+                         pose);
+
+                if(frame % 100 == 0){
+                    std::cout.precision(2);
+                    std::cout << (float) frame / matches.size() * 100.0f << " percent Loaded\n";
+                }
+
             } // Fin de FOR
+
+            std::cout << "Secuencia " << i << " Cargada\n";
+
         } // Fin de FOR // Lectura de todas subsecuencias
 
 
