@@ -137,9 +137,10 @@ public:
 		return tmp;
 	}
 
-	Tree* Deserialize(std::istream& stream)
+	Tree* Deserialize(std::istream& stream, Settings *settings)
 	{
-		settings_ = new Settings();
+		//settings_ = new Settings(); // aqui esta el error
+		settings_ = settings;
 
 		std::vector<char> buffer(strlen(binaryFileHeader_) + 1);
 		stream.read(&buffer[0], strlen(binaryFileHeader_));
@@ -381,6 +382,34 @@ public:
 		auto m = eval_recursive(&root_, row, col, rgb_image, depth_image, valid);
 		return m;
 	} // Fin de la función eval
+
+	Node<D, RGB> * getRoot()	
+	{
+		return root_;
+	}
+
+	void printBTree(const std::string &prefix, Node<D, RGB> *node, bool isLeft){
+
+		if ( node != nullptr)
+		{
+			std::cout << prefix;
+
+			std::cout << (isLeft ? "├──" : "└──" );
+
+			// print the value of the node
+			std::cout.precision(4);
+			if(node->is_leaf_)
+				std::cout << node->depth_ << " (" << node->mode_(0)<<","<< node->mode_(1)<<","<< node->mode_(2)<<") "
+						<< node->feature_.GetThreshold() << " "; 
+			else
+				std::cout << node->depth_ << " " << node->feature_.GetThreshold() << " ";
+
+			node->feature_.printOffsets(); std::cout << std::endl;
+
+			printBTree( prefix + (isLeft ? "│   " : "    "), node->left_,true);
+			printBTree( prefix + (isLeft ? "│   " : "    "), node->right_,false);
+		}
+	} // Fin de printBTree
 	
 }; //  Fin de Declaración de Clase Tree
 

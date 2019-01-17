@@ -40,9 +40,9 @@ int main(int argc, char const *argv[])
 
 		printMat44(pose, "pose");
 
-		printEigenVector3d( posePosition(pose) );		
+		printEigenVector3d( posePosition(pose) );
 
-		cv::waitKey();
+		cv::waitKey(30);
 	}
 
 	// 2do Test: Entrenamiento de 1 arbol --- DESARROLLO

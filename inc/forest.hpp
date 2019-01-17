@@ -111,7 +111,7 @@ public:
 		int i = 0;
 		for (i = 0; i < treeCount; ++i) {
 			Tree<D, RGB> *t = new Tree<D, RGB>();
-			t->Deserialize(stream);
+			t->Deserialize(stream,settings_);
 			forest_.push_back(t);
 		}
 	} // Fin de Deserialize
@@ -135,7 +135,17 @@ public:
 
 		// randomly choose frames
 		for (int i = 0; i < settings_->num_frames_per_tree_; ++i) {
-			int curr_frame = random_->Next(0, data_->getNumFrames());
+			// Activar desactivar las siguientes lineas de codigo para usar el 7 scenes
+			//------------------------------------------------------
+			//int curr_frame = random_->Next(0, data_->getNumFrames());
+			//------------------------------------------------------
+			///*
+			int seq = (data_->train_sequences[ random_->Next(0,data_->train_sequences.size()) ] - 1) * 1000;
+			int curr_frame = random_->Next(0,1000) + seq;
+			//std::cout << "curr_frame: " << curr_frame << std::endl;
+			//*/
+
+
 			// randomly sample pixels per frame
 			for (int j = 0; j < settings_->num_pixels_per_frame_; ++j) {
 				int row = random_->Next(0, settings_->image_height_);
@@ -159,7 +169,7 @@ public:
 				LabeledPixel pixel(curr_frame, cv::Point2i(col, row), label);
 				labeled_data.push_back(pixel);
 			}
-		}
+		} // Fin de FOR
 		return labeled_data;
 	} // Fin de la funcion LabelData
 
@@ -171,6 +181,7 @@ public:
 		for (auto t : forest_) {
 			std::cout << "[Tree " << index << "] " << "Generating Training Data.\n";
 			std::vector<LabeledPixel> labeled_data = LabelData();
+			std::cout << "LabelData Size: " << labeled_data.size() << std::endl;
 
 			// train tree with set of pixels recursively
 			std::cout << "[Tree " << index << "] " << "Training.\n";
@@ -212,11 +223,14 @@ public:
 	{
 		std::vector<Eigen::Vector3d> modes;
 
+		int cont = 0;
 		for (auto t : forest_) {
-		  bool valid = true;
-		  Eigen::Vector3d m = t->Eval(row, col, rgb_image, depth_image, valid);
-		  if (valid)
-		    modes.push_back(m);
+			//std::cout << "Arbol " << cont << std::endl;
+			bool valid = true;
+			Eigen::Vector3d m = t->Eval(row, col, rgb_image, depth_image, valid);
+			if (valid)
+				modes.push_back(m);
+			cont++;
 		}
 
 		return modes;
@@ -232,6 +246,7 @@ public:
 	std::vector<Hypothesis> CreateHypotheses(int K_init, cv::Mat rgb_frame, cv::Mat depth_frame)
 	{
 		std::vector<Hypothesis> hypotheses;
+		//cv::namedWindow("Display Depth",cv::WINDOW_AUTOSIZE);
 
 		// sample initial hypotheses
 		for (uint16_t i = 0; i < K_init; ++i) {
@@ -241,6 +256,8 @@ public:
 			h.output.resize(3, 3);
 
 			for (uint16_t j = 0; j < 3; ++j) {
+				//std::cout << "Hipo" << i << std::endl;
+				//std::cout << "j" << j << std::endl;
 				int col = 0, row = 0;
 				double Z = 0.0;
 				D test = 0;
@@ -252,6 +269,13 @@ public:
 					Z = (double)test / (double)settings_->depth_factor_;
 				} while (test == 0);
 
+				//cv::Mat m = depth_frame.clone();
+				//cv::circle(m,cv::Point2i(col,row),5,cv::Scalar(255,255,255));
+				//cv::circle(m,cv::Point2i(col,row),130,cv::Scalar(255,255,255));
+
+				//show_depth_image("Display Depth",m);
+		    	//cv::waitKey();
+
 				double Y = (row - settings_->cy) * Z / settings_->fy;
 				double X = (col - settings_->cx) * Z / settings_->fx;
 
@@ -260,9 +284,10 @@ public:
 				// add to input
 				h.input.col(j) = p_camera;
 
-				std::vector<Eigen::Vector3d> modes = Eval(row, col, rgb_frame, depth_frame);
+				std::vector<Eigen::Vector3d> modes = Eval(row, col, rgb_frame, depth_frame);// revisar esto en el paper
 
 				if (modes.empty()) {
+					//std::cout << "--j" << std::endl;
 					--j;
 				} else {
 					Eigen::Vector3d point;
@@ -303,14 +328,24 @@ public:
 			int batch_size = 500; // todo put in settings
 
 			// sample points in test image
+			// Se remuestrean los pixeles en cada ronda
 			for (int i = 0; i < batch_size; ++i)  {
 				int col = random_->Next(0, settings_->image_width_);
 				int row = random_->Next(0, settings_->image_height_);
 				test_pixels.push_back(cv::Point2i(col, row));
 			}
 
+			// Se evalua cada pixel
 			for (auto p : test_pixels) {
 				// evaluate forest to get modes (union)
+
+				// Este conjunto de modas se evalua con cada una de las hipotesis
+				// en cada iteracion sobre las hipotesis
+				// se evalua el conj de modas y se selecciona aquella que genere menor valor de energia
+				// posteriormente esta energia se evalua con la funcion tophat()
+
+				// si para alguna hipotesis se resuelve que es inlier, su 3D world coord y 
+				// su mejor moda son agregados a dicha hipotesis ṕara que luego sean refinadas
 				auto modes = Eval(p.y, p.x, rgb_frame, depth_frame);
 
 				D test = depth_frame.at<D>(p);
@@ -355,7 +390,7 @@ public:
 
 			} // Fin de bucle FOR testeo de los pixeles
 
-			// sort hypotheses 
+			// sort hypotheses (de forma ascendente)
 			std::sort(hypotheses.begin(), hypotheses.begin() + K);
 
 			K = K / 2; // discard half
@@ -370,5 +405,10 @@ public:
 		return hypotheses.front().pose;
 
 	} // Fin de la Funcion Test
+
+	void printForest()
+	{
+		forest_[0]->printBTree("",forest_[0]->getRoot(),false);
+	}
 	
 }; // Fin de la Clase FOREST

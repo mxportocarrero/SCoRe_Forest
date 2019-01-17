@@ -110,7 +110,7 @@ void writeEigenVec2File(const Eigen::VectorXd& Vec, const char* file){
 
 std::vector<std::string> split(const std::string& s, char separator)
 {
-   std::vector<std::string> output;
+    std::vector<std::string> output;
 
     std::string::size_type prev_pos = 0, pos = 0;
 

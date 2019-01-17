@@ -3,6 +3,7 @@
 #include "general_includes.hpp"
 #include "settings.hpp"
 #include "random.hpp"
+#include "utilities.hpp"
 
 
 // Clase Feature
@@ -16,7 +17,8 @@
 
 class Feature
 {
-protected:
+//protected:
+public:
 	cv::Point2i offset_1_;
 	cv::Point2i offset_2_;
 public:
@@ -67,7 +69,8 @@ public:
 template <typename D, typename RGB>
 class DepthAdaptiveRGB : public Feature
 {
-protected:
+//protected:
+public:
 	int color_channel_1_, color_channel_2_;
 	float tau_;	
 public:	
@@ -87,23 +90,24 @@ public:
 		cv::Point2i offset_2(random->Next(-130, 130), random->Next(-130, 130));
 		int color_channel_1 = random->Next(0, 2);
 		int color_channel_2 = random->Next(0, 2);
-		int tau_ = random->Next(-128, 128);
-		return DepthAdaptiveRGB(offset_1, offset_2, color_channel_1, color_channel_2, tau_);
+		int tau = random->Next(-128, 128); // Revisar esto en el paper !!!!
+		return DepthAdaptiveRGB(offset_1, offset_2, color_channel_1, color_channel_2, tau);
 	}
 
 	virtual float GetResponse(cv::Mat depth_img, cv::Mat rgb_img, cv::Point2i pos, Settings &settings, bool &valid) override
 	{
 		D depth_at_pos = depth_img.at<D>(pos);
 		float depth = (float)depth_at_pos;
+		//std::cout << "pixel depth: " << depth << std::endl;
+		//std::cout << "depth factor: " << settings.depth_factor_ << ":" << (float)settings.depth_factor_ << std::endl;
 
 		if (depth <= 0) {
 			valid = false;
 			return 0.0;
 		} else {
-			depth /= settings.depth_factor_; // scale value
+			depth /= (float)settings.depth_factor_; // scale value
 		}
 
-		// depth invariance
 		cv::Point2i depth_inv_1(offset_1_.x / depth, offset_2_.y / depth);
 		cv::Point2i depth_inv_2(offset_2_.x / depth, offset_2_.y / depth);
 
@@ -112,6 +116,31 @@ public:
 
 		int width = settings.image_width_;
 		int height = settings.image_height_;
+
+		/*// depth invariance
+		// Este codigo sirve para observar como se comportan los offsets
+		std::cout << "pixel depth / depth factor: " << depth << std::endl;
+
+		std::cout << "Central pixel: " << pos.x << "," << pos.y << "\n";
+
+		std::cout << "Offset 1: " << offset_1_.x << "," << offset_1_.y << " Offset 2: " << offset_2_.x << "," << offset_2_.y << std::endl;
+		std::cout << "Depth_inv_1: " << depth_inv_1.x << "," << depth_inv_1.y << " Depth_inv_2: " << depth_inv_2.x << "," << depth_inv_2.y << std::endl;
+		std::cout << "pos1: " << pos1.x << "," << pos1.y << " pos2: " << pos2.x << "," << pos2.y << std::endl;
+
+		cv::namedWindow("Display Depth",cv::WINDOW_AUTOSIZE);
+
+		cv::Mat m = depth_img.clone();
+		// Centro
+		cv::circle(m,pos,5,cv::Scalar(255,255,255));
+		// Offsets
+		cv::circle(m,pos1,10,cv::Scalar(255,255,255));
+		cv::circle(m,pos2, 10,cv::Scalar(255,255,255));
+		cv::circle(m,pos,130,cv::Scalar(255,255,255));
+
+		show_depth_image("Display Depth",m);
+		cv::waitKey();
+		
+		*/
 
 		// check bounds
 		if (pos1.x >= width || pos1.y >= height ||
@@ -135,4 +164,13 @@ public:
 	{
 		return tau_;
 	} // Fin de la funcion Get Threshold
+
+	//no deja espacio cuando imprime
+	void printOffsets()
+	{
+		std::cout << "offset1: " << offset_1_.x << ","<< offset_1_.y
+				  << " offset2: " << offset_2_.x << ","<< offset_2_.y;
+	}
+
+
 }; // Fin de la Declaracion de la Clase Depth AdaptiveRGB

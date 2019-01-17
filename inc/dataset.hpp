@@ -87,11 +87,10 @@ private:
     // Vectores especiales para realizar la Lectura del 7-Scenes Dataset
     // Como este Dataset esta partido en miles, solo guardamos los indices como
     // indicadores de que secuencias son para Training y Testing
-    std::vector<int> train_sequences,test_sequences;
 
 public:
     Dataset(std::string dataset_path); // Para leer el Dataset del TUM
-    Dataset(std::string dataset_path, int dataset_type) // Para leer los datasets del 7 secenes
+    Dataset(std::string dataset_path, int dataset_type); // Para leer los datasets del 7 secenes
 
     // Estas funciones se encargan de devolver los cv::Mat y Poses correspondientes
     cv::Mat getRgbImage(int frame);
@@ -104,7 +103,10 @@ public:
     // Se encarga de  agregar datos a los diccionarios y vectores que almacenan todo
     void addFrame(cv::Mat rgb_frame, cv::Mat depth_frame, std::string timestamp, Pose pose);
 
+    std::vector<int> train_sequences,test_sequences;
 }; // Fin de Clase de Dataset
+
+Pose read_pose(const std::string &pose_file);
 
 
 

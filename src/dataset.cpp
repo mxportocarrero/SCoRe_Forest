@@ -10,27 +10,39 @@ Pose read_pose(const std::string &pose_file)
     myFile.open(pose_file);
 
     // La forma en que es almacenada los poses es como una matriz de 4 x 4
-
-    if (myFile.is_open())
+    if (!myFile.is_open())
     {
-        std::string temp_line;
-        for (int i = 0; i < 4; ++i)
-        {
-            // Leemos la linea
-            std::getline(myFile,temp_line);
-
-            // Usamos nuestra funcion split para separarlos en cada elemento
-            std::vector<std::string> v = split(temp_line,' ');
-
-            // Asignamos los valores respectivos y formamos nuestro objeto Pose
-            pose.m[i][0] = std::stof( v[0] );
-            pose.m[i][1] = std::stof( v[1] );
-            pose.m[i][2] = std::stof( v[2] );
-            pose.m[i][3] = std::stof( v[3] );
-        }
+        std::cout << "File couldnt be opened\n" << std::endl;
     }
 
-    return pose
+    std::string t1, t2; double d; int cont = 0;
+    while(myFile >> t1)
+    {
+
+        t2 = t1.substr( t1.size() - 4, 4);
+        t1 = t1.erase( t1.size() - 5);
+
+        d = std::stof(t1);
+
+        //std::cout << t1 << " " << t2 << std::endl;
+
+        if (t2[0] == '+')
+        {
+            d = d * pow(10.0, (int)(t2[3] - '0') );
+        }
+        else
+        {
+            d = d / pow(10.0, (int)(t2[3] - '0') );
+        }
+
+        //std::cout.precision(6);
+        //std::cout << d << std::endl;
+
+        pose.m[cont / 4][ cont % 4] = d;
+        cont++;
+    }
+
+    return pose;
 }
 
 // Implementacion de Funciones
@@ -151,6 +163,7 @@ Dataset::Dataset(std::string dataset_path):
 
 } // Fin del constructor // Lector del Dataset del TUM
 
+// Constructor para el 7 scenes
 Dataset::Dataset(std::string dataset_path, int dataset_type):
     dataset_path_(dataset_path)
 {
@@ -163,7 +176,6 @@ Dataset::Dataset(std::string dataset_path, int dataset_type):
     trainFile.open(dataset_path_ + "/TrainSplit.txt");
     testFile.open(dataset_path_ + "/TestSplit.txt");
 
-    std::vector<int> train,;
     if(trainFile.is_open() && testFile.is_open())
     {
         std::string temp_line; // String temporal para guardar los datos
@@ -173,22 +185,23 @@ Dataset::Dataset(std::string dataset_path, int dataset_type):
         // ultimo caracter de las lineas
         while( std::getline(trainFile,temp_line) )
         {
-            train_sequences.push_back( std::stoi( temp_line[ temp_line.size() - 1 ] ) );
+            //std::cout << temp_line << std::endl << " " << temp_line[ temp_line.size() -2 ] << std::endl;
+            train_sequences.push_back( (int)( temp_line[ temp_line.size() - 2 ] - '0' ) );
         }
 
         while( std::getline(testFile,temp_line) )
         {
-            test_sequences.push_back( std::stoi( temp_line[ temp_line.size() - 1 ] ) );
+            test_sequences.push_back( (int)( temp_line[ temp_line.size() - 2 ] - '0' ) );
         }
 
         std::cout << "Training Sequences: ";
         for (int i = 0; i < train_sequences.size(); ++i)
-            std::cout << train_sequences[i] << ","
+            std::cout << train_sequences[i] << ",";
         std::cout << std::endl;
 
         std::cout << "Testing Sequences: ";
         for (int i = 0; i < test_sequences.size(); ++i)
-            std::cout << test_sequences[i] << ","
+            std::cout << test_sequences[i] << ",";
         std::cout << std::endl;
 
         // Cada secuencia de imagenes esta separado en sub-secuencias de 1000
@@ -200,14 +213,14 @@ Dataset::Dataset(std::string dataset_path, int dataset_type):
 
         // Lo primero que haremos sera leer toda la secuencia sin importar si son
         // frames para training o para test
+        std::string s,s_rgb,s_depth,s_pose;
         for (int i = 0; i < train_sequences.size() + test_sequences.size(); ++i)
         {
-            std::string s,s_rgb,s_depth,s_pose;
             // Leemos los paquetes de los frames
-            for (int frame = 0; frame < 1000; ++i)
+            for (int frame = 0; frame < 1000; ++frame)
             {
                 // Construyendo los strings para la lectura
-                s = std::to_string(i);
+                s = std::to_string(frame);
 
                 if(frame < 10)
                 {
@@ -222,12 +235,27 @@ Dataset::Dataset(std::string dataset_path, int dataset_type):
                     s = "000" + s;
                 }
 
-                s_rgb = dataset_path_ + "/frame-" + s + ".color.png";
-                s_depth = dataset_path_ + "/frame-" + s + ".depth.png";
-                s_pose = dataset_path_ + "/frame-" + s + ".pose.txt";
+                s_rgb = dataset_path_ + "/seq-0"+ std::to_string(i+1) +"/frame-" + s + ".color.png";
+                s_depth = dataset_path_ + "/seq-0"+ std::to_string(i+1) +"/frame-" + s + ".depth.png";
+                s_pose = dataset_path_ + "/seq-0"+ std::to_string(i+1) +"/frame-" + s + ".pose.txt";
+
+                //std::cout << s_rgb << std::endl << s_depth << std::endl << s_pose << std::endl;
+                
 
                 cv::Mat img_rgb = cv::imread( s_rgb );
                 cv::Mat img_depth = cv::imread( s_depth, CV_LOAD_IMAGE_ANYDEPTH );
+
+                // Tenemos que corregir las imagenes depth
+                for (int row = 0; row < 640; ++row)
+                {
+                    for (int col = 0; col < 480; ++col)
+                    {
+                        if (img_depth.at<ushort>(col,row) == 65535)
+                        {
+                            img_depth.at<ushort>(col,row) = 0;
+                        }
+                    }
+                }
 
                 Pose pose = read_pose(s_pose);
 
@@ -235,11 +263,7 @@ Dataset::Dataset(std::string dataset_path, int dataset_type):
                          img_depth,
                          "00000000", // Este Dataset no tiene timestamps
                          pose);
-
-                if(frame % 100 == 0){
-                    std::cout.precision(2);
-                    std::cout << (float) frame / matches.size() * 100.0f << " percent Loaded\n";
-                }
+                
 
             } // Fin de FOR
 
@@ -247,10 +271,7 @@ Dataset::Dataset(std::string dataset_path, int dataset_type):
 
         } // Fin de FOR // Lectura de todas subsecuencias
 
-
-    }
-
-
+    } // Fin de IF
 
 } // Fin del Constructor // Lector del 7scenes
 

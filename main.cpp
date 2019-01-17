@@ -34,8 +34,10 @@ Comando para ejecucion:
 
 #include "inc/forest.hpp"
 
-#define DATABASE_NAME "data/rgbd_dataset_freiburg11_desk"
+//#define DATABASE_NAME "data/rgbd_dataset_freiburg11_desk"
 //#define DATABASE_NAME "data/rgbd_dataset_freiburg22_pioneer_slam"
+
+#define DATABASE_NAME "data/7_scenes/chess"
 
 int main(int argc, char const *argv[])
 {
@@ -92,12 +94,19 @@ int main(int argc, char const *argv[])
 	// num_trees = 5 / max_tree_depth = 16 / num_frames_per_tree = 500
 	// num_px_per_frame = 5000
 
-	Settings *settings = new Settings(640, 480, 5000, 525.0f, 525.0f, 319.5f, 239.5f); // Default
-	//Settings *settings = new Settings(640, 480, 5000, 517.3f, 516.5f, 318.6f, 255.3f); // Freiburg 1
-	//Settings *settings = new Settings(640, 480, 5000, 535.4f, 539.2f, 320.1f, 247.6f); // Freiburg 3
+	// Default
+	//Settings *settings = new Settings(640, 480, 5000, 525.0f, 525.0f, 319.5f, 239.5f);
+
+	// Default 7 scenes
+	Settings *settings = new Settings(640, 480, 1000, 585.0f, 585.0f, 320.0f, 240.0f);
+
+	// Freiburg 1
+	//Settings *settings = new Settings(640, 480, 5000, 517.3f, 516.5f, 318.6f, 255.3f);
+	// Freiburg 3
+	//Settings *settings = new Settings(640, 480, 5000, 535.4f, 539.2f, 320.1f, 247.6f);
 
 	// DATA
-	Dataset *myDataset = new Dataset(DATABASE_NAME);
+	Dataset *myDataset = new Dataset(DATABASE_NAME,1);
 
 	// Tree<ushort, cv::Vec3b> * tree = new Tree<ushort, cv::Vec3b>();
 	Forest<ushort, cv::Vec3b> *forest = nullptr;
@@ -123,15 +132,20 @@ int main(int argc, char const *argv[])
 		{
 			std::cout << "Forest is NOT valid" << std::endl;
 			return 1;
-		}		
+		}
 
-	//**	// TESTING
+		//forest->printForest();
+
+
+
+	///*	// TESTING
 
 		// Todo: test each image in test dataset and provide relevent statistics about accuracy
 		Random randGen;
 		int correct_predictions = 0;
 		int num_of_tests = 100;
 	    cv::namedWindow("Display RGB",cv::WINDOW_AUTOSIZE);
+	    
 	    // eval forest at random frames
 	    for (int i = 0; i < num_of_tests; ++i)
 	    {
@@ -143,8 +157,8 @@ int main(int argc, char const *argv[])
 		    double duration;
 		    start = std::clock();
 
-		    Eigen::Affine3d pose = forest->Test(myDataset->getRgbImage(frame), myDataset->getDepthImage(frame));
 		    cv::imshow("Display RGB",myDataset->getRgbImage(frame));
+		    Eigen::Affine3d pose = forest->Test(myDataset->getRgbImage(frame), myDataset->getDepthImage(frame));
 
 
 		    duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
@@ -193,13 +207,13 @@ int main(int argc, char const *argv[])
 		    {
 		    	std::cout << "Accuracy (%) : " << (float)correct_predictions / (float)(i+1) * 100.0 << std::endl;
 		    }
+		    cv::waitKey();
 
-		    cv::waitKey(1000);
 
 	    } // Fin de FOR
 
 
-//*/
+	//*/
 	} // Fin del else (TESTING)
 
 	delete forest;
@@ -207,10 +221,6 @@ int main(int argc, char const *argv[])
 
 	return 0;
 }
-
-
-
-
 
 
 
